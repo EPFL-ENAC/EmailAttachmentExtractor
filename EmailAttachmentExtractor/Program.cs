@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Net.Mail;
 using System.IO;
 using System.Configuration;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace EmailAttachmentExtractor
 {
@@ -26,18 +27,22 @@ namespace EmailAttachmentExtractor
 			string IMAP_PASSWORD = appSettings["ImapPassword"];
 			string IMAP_SERVER = appSettings["ImapServer"];
 			int IMAP_PORT = Convert.ToInt32(appSettings["ImapPort"]);
+			string FOLDER = appSettings["Folder"];
+			string SUBJECT = appSettings["Subject"];
 
-			using (var client = new ImapClient())
+            using (var client = new ImapClient())
 			{
 				client.Connect(IMAP_SERVER, IMAP_PORT, SecureSocketOptions.SslOnConnect);
 				client.Authenticate(IMAP_USERNAME, IMAP_PASSWORD);
-				client.Inbox.Open(FolderAccess.ReadOnly);
+                IMailFolder mailFolder = client.GetFolder(FOLDER);
+				mailFolder.Open(FolderAccess.ReadOnly); //Reads from specific folder
+				//client.Inbox.Open(FolderAccess.ReadOnly);
 
-				var uids = client.Inbox.Search(SearchQuery.All);
+                var uids = mailFolder.Search(SearchQuery.SubjectContains(SUBJECT));
 
 				foreach (var uid in uids)
 				{
-					var message = client.Inbox.GetMessage(uid);
+					var message = mailFolder.GetMessage(uid);
 
 					foreach (var attachment in message.Attachments)
 					{
