@@ -22,12 +22,12 @@ namespace EmailAttachmentExtractor
 
 			// Get constant from app.config file
 			var appSettings = ConfigurationManager.AppSettings;
-			string IMAP_USERNAME = appSettings["ImapUsername"];//.ToString();
-			string IMAP_PASSWORD = appSettings["ImapPassword"].ToString();
-			string IMAP_SERVER = appSettings["ImapServer"].ToString();
-			int IMAP_PORT = Convert.ToInt32(appSettings["ImapPort"].ToString());
+			string IMAP_USERNAME = appSettings["ImapUsername"];
+			string IMAP_PASSWORD = appSettings["ImapPassword"];
+			string IMAP_SERVER = appSettings["ImapServer"];
+			int IMAP_PORT = Convert.ToInt32(appSettings["ImapPort"]);
 
-			using (var client = new ImapClient())// new ProtocolLogger("imap.log")))
+			using (var client = new ImapClient())
 			{
 				client.Connect(IMAP_SERVER, IMAP_PORT, SecureSocketOptions.SslOnConnect);
 				client.Authenticate(IMAP_USERNAME, IMAP_PASSWORD);
