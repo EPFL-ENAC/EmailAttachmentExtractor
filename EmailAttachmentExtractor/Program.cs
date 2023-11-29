@@ -29,7 +29,9 @@ namespace EmailAttachmentExtractor
 			int IMAP_PORT = Convert.ToInt32(appSettings["ImapPort"]);
 			string SOURCEFOLDER = appSettings["SourceFolder"];
 			string DESTINATIONFOLDER = appSettings["DestinationFolder"];
-			string SUBJECT = appSettings["Subject"];
+			string ATTACHMENT_DESTINATION_FOLDER = appSettings["AttachmentDestinationFolder"];
+
+            string SUBJECT = appSettings["Subject"];
 
             using (var client = new ImapClient())
 			{
@@ -47,7 +49,7 @@ namespace EmailAttachmentExtractor
 
 					foreach (var attachment in message.Attachments)
 					{
-						using (var stream = File.Create("test\\" + attachment.ContentDisposition.FileName))
+						using (var stream = File.Create(Path.Combine(ATTACHMENT_DESTINATION_FOLDER, attachment.ContentDisposition.FileName)))
 						{
 							if (attachment is MessagePart)
 							{
