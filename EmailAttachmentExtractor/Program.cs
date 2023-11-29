@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Net.Mail;
 using System.IO;
 using System.Configuration;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace EmailAttachmentExtractor
 {
@@ -22,26 +23,33 @@ namespace EmailAttachmentExtractor
 
 			// Get constant from app.config file
 			var appSettings = ConfigurationManager.AppSettings;
-			string IMAP_USERNAME = appSettings["ImapUsername"];//.ToString();
-			string IMAP_PASSWORD = appSettings["ImapPassword"].ToString();
-			string IMAP_SERVER = appSettings["ImapServer"].ToString();
-			int IMAP_PORT = Convert.ToInt32(appSettings["ImapPort"].ToString());
+			string IMAP_USERNAME = appSettings["ImapUsername"];
+			string IMAP_PASSWORD = appSettings["ImapPassword"];
+			string IMAP_SERVER = appSettings["ImapServer"];
+			int IMAP_PORT = Convert.ToInt32(appSettings["ImapPort"]);
+			string SOURCEFOLDER = appSettings["SourceFolder"];
+			string DESTINATIONFOLDER = appSettings["DestinationFolder"];
+			string ATTACHMENT_DESTINATION_FOLDER = appSettings["AttachmentDestinationFolder"];
 
-			using (var client = new ImapClient())// new ProtocolLogger("imap.log")))
+            string SUBJECT = appSettings["Subject"];
+
+            using (var client = new ImapClient())
 			{
 				client.Connect(IMAP_SERVER, IMAP_PORT, SecureSocketOptions.SslOnConnect);
 				client.Authenticate(IMAP_USERNAME, IMAP_PASSWORD);
-				client.Inbox.Open(FolderAccess.ReadOnly);
+                IMailFolder sourceFolder = client.GetFolder(SOURCEFOLDER);
+				IMailFolder destinationFolder = client.GetFolder(DESTINATIONFOLDER);
+				sourceFolder.Open(FolderAccess.ReadWrite);//Reads from specific folder
 
-				var uids = client.Inbox.Search(SearchQuery.All);
+                var uids = sourceFolder.Search(SearchQuery.SubjectContains(SUBJECT)); //Only searches email with specific subject
 
 				foreach (var uid in uids)
 				{
-					var message = client.Inbox.GetMessage(uid);
+					var message = sourceFolder.GetMessage(uid);
 
 					foreach (var attachment in message.Attachments)
 					{
-						using (var stream = File.Create("test\\" + attachment.ContentDisposition.FileName))
+						using (var stream = File.Create(Path.Combine(ATTACHMENT_DESTINATION_FOLDER, attachment.ContentDisposition.FileName)))
 						{
 							if (attachment is MessagePart)
 							{
@@ -56,7 +64,8 @@ namespace EmailAttachmentExtractor
 						}
 					}
 				}
-				client.Disconnect(true);
+                var uidMap = sourceFolder.MoveTo(uids, destinationFolder);
+                client.Disconnect(true);
 			}
 		}
 	}
