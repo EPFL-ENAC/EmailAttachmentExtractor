@@ -27,22 +27,23 @@ namespace EmailAttachmentExtractor
 			string IMAP_PASSWORD = appSettings["ImapPassword"];
 			string IMAP_SERVER = appSettings["ImapServer"];
 			int IMAP_PORT = Convert.ToInt32(appSettings["ImapPort"]);
-			string FOLDER = appSettings["Folder"];
+			string SOURCEFOLDER = appSettings["SourceFolder"];
+			string DESTINATIONFOLDER = appSettings["DestinationFolder"];
 			string SUBJECT = appSettings["Subject"];
 
             using (var client = new ImapClient())
 			{
 				client.Connect(IMAP_SERVER, IMAP_PORT, SecureSocketOptions.SslOnConnect);
 				client.Authenticate(IMAP_USERNAME, IMAP_PASSWORD);
-                IMailFolder mailFolder = client.GetFolder(FOLDER);
-				mailFolder.Open(FolderAccess.ReadOnly); //Reads from specific folder
-				//client.Inbox.Open(FolderAccess.ReadOnly);
+                IMailFolder sourceFolder = client.GetFolder(SOURCEFOLDER);
+				IMailFolder destinationFolder = client.GetFolder(DESTINATIONFOLDER);
+				sourceFolder.Open(FolderAccess.ReadWrite);//Reads from specific folder
 
-                var uids = mailFolder.Search(SearchQuery.SubjectContains(SUBJECT));
+                var uids = sourceFolder.Search(SearchQuery.SubjectContains(SUBJECT)); //Only searches email with specific subject
 
 				foreach (var uid in uids)
 				{
-					var message = mailFolder.GetMessage(uid);
+					var message = sourceFolder.GetMessage(uid);
 
 					foreach (var attachment in message.Attachments)
 					{
@@ -61,7 +62,8 @@ namespace EmailAttachmentExtractor
 						}
 					}
 				}
-				client.Disconnect(true);
+                var uidMap = sourceFolder.MoveTo(uids, destinationFolder);
+                client.Disconnect(true);
 			}
 		}
 	}
