@@ -31,7 +31,9 @@ namespace EmailAttachmentExtractor
 			string DESTINATIONFOLDER = appSettings["DestinationFolder"];
 			string ATTACHMENT_DESTINATION_FOLDER = appSettings["AttachmentDestinationFolder"];
 
-            string SUBJECT = appSettings["Subject"];
+            string SUBJECTFR = appSettings["SubjectFR"];
+            string SUBJECTEN = appSettings["SubjectEN"];
+
 
             using (var client = new ImapClient())
 			{
@@ -41,7 +43,7 @@ namespace EmailAttachmentExtractor
 				IMailFolder destinationFolder = client.GetFolder(DESTINATIONFOLDER);
 				sourceFolder.Open(FolderAccess.ReadWrite);//Reads from specific folder
 
-                var uids = sourceFolder.Search(SearchQuery.SubjectContains(SUBJECT)); //Only searches email with specific subject
+                var uids = sourceFolder.Search(SearchQuery.SubjectContains(SUBJECTFR).Or(SearchQuery.SubjectContains(SUBJECTEN))); //Only searches email with specific subject
 
 				foreach (var uid in uids)
 				{
